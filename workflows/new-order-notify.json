@@ -1,0 +1,178 @@
+{
+  "name": "Memory Box - Nuevo Pedido",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-new-order",
+      "name": "1_Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "new-order"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "order_id",
+              "name": "order_id",
+              "value": "={{ ($json.body || $json).order_id || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "client_name",
+              "name": "client_name",
+              "value": "={{ ($json.body || $json).client_name || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "phone",
+              "value": "={{ ($json.body || $json).phone || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "variant",
+              "name": "variant",
+              "value": "={{ ($json.body || $json).variant || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "shipping_option",
+              "name": "shipping_option",
+              "value": "={{ ($json.body || $json).shipping_option || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "variant_label",
+              "name": "variant_label",
+              "value": "={{ (() => { const v = ($json.body || $json).variant; const m = { graphite: 'Grafito', wood: 'Madera', black: 'Negro', marble: 'Mármol', graphite_light: 'Grafito (Con Luz)', wood_light: 'Madera (Con Luz)', black_light: 'Negro (Con Luz)', marble_light: 'Mármol (Con Luz)' }; return m[v] || v || 'N/A'; })() }}",
+              "type": "string"
+            },
+            {
+              "id": "shipping_label",
+              "name": "shipping_label",
+              "value": "={{ (() => { const s = ($json.body || $json).shipping_option; const m = { pickup_uber: 'Retiro / Uber', shipping_province: 'Envío a otra provincia' }; return m[s] || s || 'N/A'; })() }}",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "=🆕 *Nuevo pedido #{{ ($json.body || $json).order_id || 'N/A' }}*\n\n👤 Cliente: {{ ($json.body || $json).client_name || 'N/A' }}\n📱 Teléfono: {{ ($json.body || $json).phone || 'N/A' }}\n📦 Variante: {{ (() => { const v = ($json.body || $json).variant; const m = { graphite: 'Grafito', wood: 'Madera', black: 'Negro', marble: 'Mármol', graphite_light: 'Grafito (Con Luz)', wood_light: 'Madera (Con Luz)', black_light: 'Negro (Con Luz)', marble_light: 'Mármol (Con Luz)' }; return m[v] || v || 'N/A'; })() }}\n💡 Led: {{ (() => { const lt = ($json.body || $json).led_type; if (!lt) return '—'; const m = { warm_led: 'Cálido', white_led: 'Blanco' }; return m[lt] || lt || '—'; })() }}\n🚚 Envío: {{ (() => { const s = ($json.body || $json).shipping_option; const m = { pickup_uber: 'Retiro / Uber', shipping_province: 'Envío a otra provincia' }; return m[s] || s || 'N/A'; })() }}\n\n_Enviado vía Memory Box_",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-normalize",
+      "name": "2_Normalizar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twilio.com/2010-04-01/Accounts/YOUR_TWILIO_ACCOUNT_SID/Messages.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "From",
+              "value": "whatsapp:+14155238886"
+            },
+            {
+              "name": "To",
+              "value": "whatsapp:+5493513392082"
+            },
+            {
+              "name": "Body",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "twilio-whatsapp",
+      "name": "3_WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "TWILIO_HTTP_AUTH",
+          "name": "Twilio HTTP Basic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, message: 'Notification sent' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-webhook",
+      "name": "4_Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "1_Webhook": {
+      "main": [
+        [
+          {
+            "node": "2_Normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2_Normalizar": {
+      "main": [
+        [
+          {
+            "node": "3_WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3_WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "4_Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsCompletionMessage": "Solo WhatsApp. Nodo 3_WhatsApp usa HTTP Request a Twilio: crea credencial 'HTTP Basic Auth' con User=Account SID, Password=Auth Token. Variables: TWILIO_ACCOUNT_SID, TWILIO_WHATSAPP_FROM, ADMIN_WHATSAPP_NUMBER."
+  }
+}

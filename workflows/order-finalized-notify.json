@@ -1,0 +1,154 @@
+{
+  "name": "Memory Box - Pedido Finalizado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order-finalized",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-order-finalized",
+      "name": "1_Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "order-finalized"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "first_name",
+              "name": "first_name",
+              "value": "={{ ($json.body || $json).first_name || 'Cliente' }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "phone",
+              "value": "={{ ($json.body || $json).phone || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "saldo_pendiente",
+              "name": "saldo_pendiente",
+              "value": "={{ ($json.body || $json).saldo_pendiente ?? 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "=Hola! cómo estás {{ ($json.body || $json).first_name || 'Cliente' }}? Tu cajita está lista ☺️🫶🏼\n\nTu saldo pendiente es de ${{ ($json.body || $json).saldo_pendiente_formatted || ($json.body || $json).saldo_pendiente || '0' }}\n\nQuedamos atentos para coordinar el retiro/envío",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-finalized",
+      "name": "2_Normalizar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twilio.com/2010-04-01/Accounts/YOUR_TWILIO_ACCOUNT_SID/Messages.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "From",
+              "value": "whatsapp:+14155238886"
+            },
+            {
+              "name": "To",
+              "value": "=whatsapp:{{ $json.phone.startsWith('+') ? $json.phone : '+' + $json.phone }}"
+            },
+            {
+              "name": "Body",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "twilio-whatsapp-client",
+      "name": "3_WhatsApp_Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "TWILIO_HTTP_AUTH",
+          "name": "Twilio HTTP Basic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, message: 'Finalized notification sent' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-webhook",
+      "name": "4_Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "1_Webhook": {
+      "main": [
+        [
+          {
+            "node": "2_Normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2_Normalizar": {
+      "main": [
+        [
+          {
+            "node": "3_WhatsApp_Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3_WhatsApp_Cliente": {
+      "main": [
+        [
+          {
+            "node": "4_Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsCompletionMessage": "Mismo credencial HTTP Basic Auth que Nuevo Pedido. Envía WhatsApp al teléfono del cliente cuando el pedido pasa a Finalizado."
+  }
+}

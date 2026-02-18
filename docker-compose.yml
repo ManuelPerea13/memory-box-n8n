@@ -1,0 +1,37 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: memori-box-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-true}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/Argentina/Buenos_Aires}
+      - TZ=${TZ:-America/Argentina/Buenos_Aires}
+      # Credentials for workflow (opcionales - también se configuran en n8n UI)
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - ADMIN_WHATSAPP_NUMBER=${ADMIN_WHATSAPP_NUMBER:-}
+      - TWILIO_WHATSAPP_FROM=${TWILIO_WHATSAPP_FROM:-}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      # Permitir usar $env en expresiones del workflow (Twilio, etc.)
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/home/node/workflows:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  n8n_data:
