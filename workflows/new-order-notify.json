@@ -79,8 +79,18 @@
     },
     {
       "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst raw = $env.ADMIN_WHATSAPP_NUMBERS || $env.ADMIN_WHATSAPP_NUMBER || '';\nconst numbers = raw.split(',').map(s => s.trim()).filter(Boolean);\nif (numbers.length === 0) return [{ json: { ...data, to: '' } }];\nreturn numbers.map(to => ({ json: { ...data, to } }));"
+      },
+      "id": "expand-admins",
+      "name": "2b_Admins",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [570, 300]
+    },
+    {
+      "parameters": {
         "method": "POST",
-        "url": "https://api.twilio.com/2010-04-01/Accounts/YOUR_TWILIO_ACCOUNT_SID/Messages.json",
+        "url": "={{ 'https://api.twilio.com/2010-04-01/Accounts/' + $env.TWILIO_ACCOUNT_SID + '/Messages.json' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpBasicAuth",
         "sendBody": true,
@@ -89,11 +99,11 @@
           "parameters": [
             {
               "name": "From",
-              "value": "whatsapp:+14155238886"
+              "value": "=whatsapp:{{ $env.TWILIO_WHATSAPP_FROM }}"
             },
             {
               "name": "To",
-              "value": "whatsapp:+5493513392082"
+              "value": "=whatsapp:{{ $json.to }}"
             },
             {
               "name": "Body",
@@ -114,6 +124,17 @@
           "name": "Twilio HTTP Basic"
         }
       }
+    },
+    {
+      "parameters": {
+        "maxItems": 1,
+        "keepOnlySet": false
+      },
+      "id": "limit-one",
+      "name": "3b_Limitar",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [790, 300]
     },
     {
       "parameters": {
@@ -146,6 +167,17 @@
       "main": [
         [
           {
+            "node": "2b_Admins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2b_Admins": {
+      "main": [
+        [
+          {
             "node": "3_WhatsApp",
             "type": "main",
             "index": 0
@@ -154,6 +186,17 @@
       ]
     },
     "3_WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "3b_Limitar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3b_Limitar": {
       "main": [
         [
           {

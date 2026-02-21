@@ -19,7 +19,7 @@ Proyecto n8n para integrar notificaciones con el backend [memory-box-back](https
 ### 1. Clonar y configurar
 
 ```bash
-cd memori-box-n8n
+cd memory-box-n8n
 cp .env.example .env
 # Editar .env con tus valores
 ```
@@ -34,7 +34,8 @@ cp .env.example .env
 | `TWILIO_ACCOUNT_SID` | Account SID de Twilio |
 | `TWILIO_AUTH_TOKEN` | Auth Token de Twilio |
 | `TWILIO_WHATSAPP_FROM` | Número WhatsApp de Twilio (ej: +14155238886) |
-| `ADMIN_WHATSAPP_NUMBER` | Número WhatsApp del admin (ej: +5491112345678) |
+| `ADMIN_WHATSAPP_NUMBER` | Un solo admin (ej: +5491112345678) |
+| `ADMIN_WHATSAPP_NUMBERS` | Varios admins, separados por coma (ej: +54911a,+54911b). Si está definido, se usa en lugar de `ADMIN_WHATSAPP_NUMBER` |
 
 **Cómo obtener TELEGRAM_CHAT_ID:**
 
@@ -127,7 +128,7 @@ Ese error significa que el número **From** no está habilitado para WhatsApp en
 ## Estructura
 
 ```
-memori-box-n8n/
+memory-box-n8n/
 ├── docker-compose.yml
 ├── .env.example
 ├── README.md
