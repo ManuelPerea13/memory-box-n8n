@@ -8,6 +8,8 @@ data:
   N8N_HOST: "0.0.0.0"
   N8N_PORT: "5678"
   N8N_PROTOCOL: "http"
+  # Permitir acceso por HTTP sin TLS (cookies no seguras)
+  N8N_SECURE_COOKIE: "false"
   # URL interna para que n8n registre los webhooks (mismo servicio en el cluster)
   WEBHOOK_URL: "http://memory-box-n8n:5678/"
   GENERIC_TIMEZONE: "America/Argentina/Buenos_Aires"
