@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: memory-box-n8n-config
+data:
+  N8N_BASIC_AUTH_ACTIVE: "true"
+  N8N_BASIC_AUTH_USER: "admin"
+  N8N_HOST: "0.0.0.0"
+  N8N_PORT: "5678"
+  N8N_PROTOCOL: "http"
+  # URL interna para que n8n registre los webhooks (mismo servicio en el cluster)
+  WEBHOOK_URL: "http://memory-box-n8n:5678/"
+  GENERIC_TIMEZONE: "America/Argentina/Buenos_Aires"
+  TZ: "America/Argentina/Buenos_Aires"
+  N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"

@@ -125,12 +125,29 @@ Ese error significa que el número **From** no está habilitado para WhatsApp en
 4. En n8n, en el nodo **3_WhatsApp** → Body Parameters → **From** → pon `whatsapp:+XXXXXXXXXX` con el número exacto que te muestra Twilio para WhatsApp (no el de SMS/llamadas si es distinto).
 5. Si cambias el número, actualiza también el workflow JSON (`TWILIO_WHATSAPP_FROM` en `.env` y el valor fijo en `workflows/new-order-notify.json` si lo usas ahí).
 
+## Deploy en mark1 (MicroK8s, mismo namespace que back/front)
+
+n8n corre en el namespace `memory-box-prod` junto al back y el front. El back llama a los webhooks por nombre de servicio: `http://memory-box-n8n:5678/webhook/...`.
+
+1. **Clonar** en mark1 (con deploy key) en `~/workspaces/memory-box/repos/memory-box-n8n`.
+2. **Secret con tu .env:** En mark1, desde el repo, crear el secret con los datos reales (copiar tu `.env` al servidor o crear el secret a mano):
+   ```bash
+   kubectl create secret generic memory-box-n8n-secret -n memory-box-prod \
+     --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
+   ```
+3. **Aplicar k8s:**
+   ```bash
+   microk8s kubectl apply -k k8s/microk8s/overlays/prod -n memory-box-prod
+   ```
+4. **UI de n8n:** NodePort **30578**. Desde la red local: `http://192.168.88.50:30578`. Entrar (admin / tu contraseña), importar los dos workflows desde `workflows/`, configurar credencial Twilio y activar ambos.
+5. **Back:** El ConfigMap del back ya incluye `N8N_WEBHOOK_URL` y `N8N_WEBHOOK_FINALIZED_URL` apuntando a `http://memory-box-n8n:5678/...`. Tras desplegar n8n, reiniciar el back para que tome las variables: `kubectl rollout restart deployment memory-box-back -n memory-box-prod`.
+
 ## Estructura
 
 ```
 memory-box-n8n/
 ├── docker-compose.yml
-├── .env.example
+├── k8s/microk8s/          # base + overlays/prod para mark1
 ├── README.md
 └── workflows/
     ├── new-order-notify.json      # Nuevo pedido → WhatsApp admin

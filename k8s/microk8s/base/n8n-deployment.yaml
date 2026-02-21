@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-box-n8n
+  labels:
+    app: memory-box-n8n
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: memory-box-n8n
+  template:
+    metadata:
+      labels:
+        app: memory-box-n8n
+    spec:
+      containers:
+        - name: n8n
+          image: n8nio/n8n:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5678
+          envFrom:
+            - configMapRef:
+                name: memory-box-n8n-config
+            - secretRef:
+                name: memory-box-n8n-secret
+          volumeMounts:
+            - name: n8n-data
+              mountPath: /home/node/.n8n
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5678
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5678
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: n8n-data
+          persistentVolumeClaim:
+            claimName: memory-box-n8n-pvc
